@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>睡前咖啡因可视化</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <h1 id="appName" data-t="app_name"></h1>
+    <label class="lang">
+      <span data-t="language"></span>
+      <select id="langSelect">
+        <option value="zh">中文</option>
+        <option value="ko">한국어</option>
+        <option value="en">English</option>
+      </select>
+    </label>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button data-view="sleep" data-t="sleep_settings"></button>
+    <button data-view="add" data-t="add_drink"></button>
+    <button data-view="curve" data-t="caffeine_curve"></button>
+    <button data-view="compare" data-t="compare"></button>
+    <button data-view="records" data-t="records"></button>
+  </nav>
+</header>
+
+<section class="summary" id="summary" aria-live="polite"></section>
+
+<main>
+  <!-- 1. 睡眠设置 -->
+  <section class="view" id="view-sleep">
+    <h2 data-t="sleep_settings"></h2>
+    <div class="card">
+      <label class="field">
+        <span data-t="bedtime"></span>
+        <input type="time" id="bedtimeInput">
+      </label>
+      <p class="help" data-t="bedtime_help"></p>
+      <button class="primary" id="bedtimeSave" data-t="save"></button>
+      <p class="msg" id="bedtimeMsg"></p>
+      <div id="bedtimeStatus"></div>
+    </div>
+  </section>
+
+  <!-- 2. 记录饮用 -->
+  <section class="view" id="view-add">
+    <h2 data-t="add_drink"></h2>
+    <div class="card">
+      <label class="field grow">
+        <span data-t="search"></span>
+        <input type="search" id="searchInput" autocomplete="off">
+      </label>
+      <label class="field">
+        <span data-t="category"></span>
+        <select id="catFilter"></select>
+      </label>
+    </div>
+
+    <div class="card">
+      <h3 data-t="brand"></h3>
+      <div class="brand-grid" id="brandGrid"></div>
+      <div class="retail-brands" id="retailBrands" hidden></div>
+    </div>
+
+    <div class="card" id="productListCard" hidden>
+      <h3 data-t="product"></h3>
+      <div class="product-list" id="productList"></div>
+    </div>
+
+    <div class="card" id="detailCard" hidden>
+      <div id="productDetail"></div>
+    </div>
+
+    <div class="card" id="formCard">
+      <h3 data-t="record_this"></h3>
+      <div id="selectedSummary" class="selected-summary"></div>
+      <div class="row">
+        <label class="field">
+          <span data-t="quantity"></span>
+          <input type="number" id="qtyInput" min="0.01" step="0.01" inputmode="decimal" value="1">
+        </label>
+        <label class="field">
+          <span data-t="consumed_at"></span>
+          <span class="dt"><input type="date" id="dateInput"><input type="time" id="timeInput"></span>
+        </label>
+      </div>
+      <p class="help" data-t="quantity_help"></p>
+      <button class="primary" id="saveRecord" data-t="save"></button>
+      <p class="msg" id="formMsg"></p>
+      <div class="latest-box" id="latestBoxForm"></div>
+    </div>
+
+    <details class="card" id="manualCard">
+      <summary data-t="manual_record"></summary>
+      <p class="warn-inline" data-t="manual_unknown"></p>
+      <label class="field">
+        <span data-t="manual_name"></span>
+        <input type="text" id="manualName" maxlength="80">
+      </label>
+      <div class="row">
+        <label class="field">
+          <span data-t="quantity"></span>
+          <input type="number" id="manualQty" min="0.01" step="0.01" inputmode="decimal" value="1">
+        </label>
+        <label class="field">
+          <span data-t="consumed_at"></span>
+          <span class="dt"><input type="date" id="manualDate"><input type="time" id="manualTime"></span>
+        </label>
+      </div>
+      <p class="help" data-t="quantity_help"></p>
+      <button class="primary" id="saveManual" data-t="save"></button>
+      <p class="msg" id="manualMsg"></p>
+    </details>
+  </section>
+
+  <!-- 3. 咖啡因曲线 -->
+  <section class="view" id="view-curve">
+    <h2 data-t="caffeine_curve"></h2>
+    <div class="card">
+      <div id="unknownBanner"></div>
+      <div class="chart-wrap" id="chartWrap"></div>
+      <div id="curveInfo"></div>
+      <div class="latest-box" id="latestBoxCurve"></div>
+    </div>
+    <details class="card">
+      <summary data-t="rules"></summary>
+      <div class="rules">
+        <code>D = c × q</code>
+        <code>R(T) = Σ [ D × 2<sup>−(T − t) / H</sup> ]</code>
+        <code>H = 5 h · θ = 10 mg</code>
+        <code>x = B − H × log<sub>2</sub>( D₁ / (θ − R₀) )</code>
+        <p><span data-t="source"></span>: <a href="https://www.ncbi.nlm.nih.gov/books/NBK223801/" target="_blank" rel="noopener">ncbi.nlm.nih.gov/books/NBK223801</a> · <span data-t="checked_date"></span>: 2026-11-15</p>
+        <p class="note" data-t="estimate_notice"></p>
+        <p class="note" data-t="reference_disclaimer"></p>
+      </div>
+    </details>
+  </section>
+
+  <!-- 4. 饮品对比 -->
+  <section class="view" id="view-compare">
+    <h2 data-t="compare"></h2>
+    <div class="card">
+      <p class="help" data-t="compare_note"></p>
+      <div id="compareTable"></div>
+      <button class="ghost" id="clearCompare" data-t="clear_compare"></button>
+      <p class="msg" id="compareMsg"></p>
+    </div>
+    <div class="card">
+      <h3 data-t="add_to_compare"></h3>
+      <div class="row">
+        <label class="field grow">
+          <span data-t="search"></span>
+          <input type="search" id="cmpSearch" autocomplete="off">
+        </label>
+        <label class="field">
+          <span data-t="brand"></span>
+          <select id="cmpBrand"></select>
+        </label>
+        <label class="field">
+          <span data-t="category"></span>
+          <select id="cmpCat"></select>
+        </label>
+      </div>
+      <div class="cmp-list" id="cmpList"></div>
+    </div>
+  </section>
+
+  <!-- 5. 饮用记录 -->
+  <section class="view" id="view-records">
+    <h2 data-t="records"></h2>
+    <div class="card">
+      <div class="day-nav">
+        <button class="ghost icon" id="dayPrev" aria-label="‹">‹</button>
+        <label class="field">
+          <span data-t="date"></span>
+          <input type="date" id="dayInput">
+        </label>
+        <button class="ghost icon" id="dayNext" aria-label="›">›</button>
+      </div>
+      <div id="dayChips" class="day-chips"></div>
+      <div id="dayStats"></div>
+      <div id="dayRecords"></div>
+      <p class="help" data-t="local_storage_notice"></p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <p data-t="estimate_notice"></p>
+  <p data-t="reference_disclaimer"></p>
+  <p data-t="image_credit"></p>
+  <details>
+    <summary data-t="source"></summary>
+    <ul id="brandSources" class="brand-sources"></ul>
+  </details>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="tooltip" id="tooltip" hidden></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
